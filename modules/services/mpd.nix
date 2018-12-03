@@ -41,6 +41,19 @@ in {
         '';
       };
 
+      package = mkOption {
+        type = types.package;
+        default = pkgs.mpd;
+        defaultText = "pkgs.mpd";
+        description = "MPD package to install.";
+        example =  literalExample ''
+          pkgs.mpd.override {
+            alsaSupport = false;
+            jackSupport = false;
+          }
+        '';
+      };
+
      musicDirectory = mkOption {
         type = types.path;
         default = "${config.home.homeDirectory}/music";
@@ -140,7 +153,7 @@ in {
 
       Service = {
         Environment = "PATH=${config.home.profileDirectory}/bin";
-        ExecStart = "${pkgs.mpd}/bin/mpd --no-daemon ${mpdConf}";
+        ExecStart = "${cfg.package}/bin/mpd --no-daemon ${mpdConf}";
         Type = "notify";
         ExecStartPre = ''${pkgs.bash}/bin/bash -c "${pkgs.coreutils}/bin/mkdir -p '${cfg.dataDir}' '${cfg.playlistDirectory}'"'';
       };
