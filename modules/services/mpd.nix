@@ -41,8 +41,21 @@ in {
         '';
       };
 
+      package = mkOption {
+        type = types.package;
+        default = pkgs.mpd;
+        defaultText = "pkgs.mpd";
+        description = "MPD package to install.";
+        example =  literalExample ''
+          pkgs.mpd.override {
+            alsaSupport = false;
+            jackSupport = false;
+          }
+        '';
+      };
+
      musicDirectory = mkOption {
-        type = types.path;
+        type = with types; either path (strMatching "(http|https|nfs|smb)://.+");
         default = "${config.home.homeDirectory}/music";
         defaultText = "$HOME/music";
         apply = toString;       # Prevent copies to Nix store.
@@ -52,7 +65,7 @@ in {
       };
 
       playlistDirectory = mkOption {
-        type = types.path;
+        type = with types; either path str;
         default = "${cfg.dataDir}/playlists";
         defaultText = ''''${dataDir}/playlists'';
         apply = toString;       # Prevent copies to Nix store.
@@ -77,7 +90,7 @@ in {
       };
 
       dataDir = mkOption {
-        type = types.path;
+        type = with types; either path str;
         default = "${config.xdg.dataHome}/${name}";
         defaultText = "$XDG_DATA_HOME/mpd";
         apply = toString;       # Prevent copies to Nix store.
@@ -140,7 +153,7 @@ in {
 
       Service = {
         Environment = "PATH=${config.home.profileDirectory}/bin";
-        ExecStart = "${pkgs.mpd}/bin/mpd --no-daemon ${mpdConf}";
+        ExecStart = "${cfg.package}/bin/mpd --no-daemon ${mpdConf}";
         Type = "notify";
         ExecStartPre = ''${pkgs.bash}/bin/bash -c "${pkgs.coreutils}/bin/mkdir -p '${cfg.dataDir}' '${cfg.playlistDirectory}'"'';
       };
