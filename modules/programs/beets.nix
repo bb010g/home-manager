@@ -28,6 +28,13 @@ in
         '';
       };
 
+      package = mkOption {
+        type = types.package;
+        default = pkgs.beets;
+        defaultText = "pkgs.beets";
+        description = "The beets package to use.";
+      };
+
       settings = mkOption {
         type = types.attrs;
         default = {};
@@ -40,9 +47,9 @@ in
   };
 
   config = mkIf cfg.enable {
-    home.packages = [ pkgs.beets ];
+    home.packages = [ cfg.package ];
 
     xdg.configFile."beets/config.yaml".text =
-        builtins.toJSON config.programs.beets.settings;
+        builtins.toJSON cfg.settings;
   };
 }
