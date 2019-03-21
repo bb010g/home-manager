@@ -219,6 +219,12 @@ in
         type = types.bool;
       };
 
+      completionInit = mkOption {
+        default = "autoload -U compinit && compinit";
+        description = "Initialization commands to run when completion is enabled.";
+        type = types.lines;
+      };
+
       enableAutosuggestions = mkOption {
         default = false;
         description = "Enable zsh autosuggestions";
@@ -397,7 +403,7 @@ in
         # calling it twice causes sight start up slowdown
         # as all $fpath entries will be traversed again.
         ${optionalString (cfg.enableCompletion && !cfg.oh-my-zsh.enable)
-          "autoload -U compinit && compinit"
+          cfg.completionInit
         }
 
         ${optionalString cfg.enableAutosuggestions
@@ -425,7 +431,7 @@ in
         ''}
 
         ${concatStrings (map (plugin: ''
-          if [ -f "$HOME/${pluginsDir}/${plugin.name}/${plugin.file}" ]; then
+          if [[ -f "$HOME/${pluginsDir}/${plugin.name}/${plugin.file}" ]]; then
             source "$HOME/${pluginsDir}/${plugin.name}/${plugin.file}"
           fi
         '') cfg.plugins)}
