@@ -182,6 +182,12 @@ in
         type = types.bool;
       };
 
+      completionInit = mkOption {
+        default = "autoload -U compinit && compinit";
+        description = "Initialization commands to run when completion is enabled.";
+        type = types.lines;
+      };
+
       enableAutosuggestions = mkOption {
         default = false;
         description = "Enable zsh autosuggestions";
@@ -338,7 +344,7 @@ in
           fpath+="$HOME/${pluginsDir}/${plugin.name}"
         '') cfg.plugins)}
 
-        ${optionalString cfg.enableCompletion "autoload -U compinit && compinit"}
+        ${optionalString cfg.enableCompletion cfg.completionInit}
         ${optionalString cfg.enableAutosuggestions
           "source ${pkgs.zsh-autosuggestions}/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
         }
@@ -362,7 +368,7 @@ in
         ''}
 
         ${concatStrings (map (plugin: ''
-          if [ -f "$HOME/${pluginsDir}/${plugin.name}/${plugin.file}" ]; then
+          if [[ -f "$HOME/${pluginsDir}/${plugin.name}/${plugin.file}" ]]; then
             source "$HOME/${pluginsDir}/${plugin.name}/${plugin.file}"
           fi
         '') cfg.plugins)}
