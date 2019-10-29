@@ -312,8 +312,8 @@ in
         }
       '' + concatStrings (
         mapAttrsToList (n: v: ''
-          insertFile "${sourceStorePath v}" \
-                     "${v.target}" \
+          insertFile ${lib.escapeShellArg (sourceStorePath v)} \
+                     ${lib.escapeShellArg (v.target)} \
                      "${if v.executable == null
                         then "inherit"
                         else builtins.toString v.executable}" \
