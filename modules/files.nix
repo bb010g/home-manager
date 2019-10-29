@@ -53,7 +53,7 @@ in
         # Paths that should be forcibly overwritten by Home Manager.
         # Caveat emptor!
         forcedPaths =
-          concatMapStringsSep " " (p: ''"$HOME/${p}"'')
+          concatMapStringsSep " " (p: ''"$HOME"/${escapeShellArg p}'')
             (mapAttrsToList (n: v: v.target)
             (filterAttrs (n: v: v.force) cfg));
 
@@ -62,7 +62,7 @@ in
 
           # A symbolic link whose target path matches this pattern will be
           # considered part of a Home Manager generation.
-          homeFilePattern="$(readlink -e "${builtins.storeDir}")/*-home-manager-files/*"
+          homeFilePattern="$(readlink -e ${escapeShellArg builtins.storeDir})/*-home-manager-files/*"
 
           forcedPaths=(${forcedPaths})
 
@@ -160,7 +160,7 @@ in
 
           # A symbolic link whose target path matches this pattern will be
           # considered part of a Home Manager generation.
-          homeFilePattern="$(readlink -e "${builtins.storeDir}")/*-home-manager-files/*"
+          homeFilePattern="$(readlink -e ${escapeShellArg builtins.storeDir})/*-home-manager-files/*"
 
           newGenFiles="$1"
           shift 1
@@ -238,15 +238,15 @@ in
       ''
         declare -A changedFiles
       '' + concatMapStrings (v: ''
-        cmp --quiet "${sourceStorePath v}" "${homeDirectory}/${v.target}" \
-          && changedFiles["${v.target}"]=0 \
-          || changedFiles["${v.target}"]=1
+        cmp --quiet ${escapeShellArg (sourceStorePath v)} ${escapeShellArg homeDirectory}/${escapeShellArg v.target} \
+          && changedFiles[${escapeShellArg v.target}]=0 \
+          || changedFiles[${escapeShellArg v.target}]=1
       '') (filter (v: v.onChange != "") (attrValues cfg))
     );
 
     home.activation.onFilesChange = hm.dag.entryAfter ["linkGeneration"] (
       concatMapStrings (v: ''
-        if [[ ${"$\{changedFiles"}["${v.target}"]} -eq 1 ]]; then
+        if [[ ''${changedFiles[${escapeShellArg v.target}]} -eq 1 ]]; then
           ${v.onChange}
         fi
       '') (filter (v: v.onChange != "") (attrValues cfg))
