@@ -8,6 +8,17 @@ let
 
   dag = config.lib.dag;
 
+  # (From nixpkgs/nixos/modules/system/boot/systemd-lib.nix
+  shellEscape = s: (replaceChars [ "\\" ] [ "\\\\" ] s);
+  mkPathSafeName = lib.replaceChars ["@" ":" "\\" "[" "]"] ["-" "-" "-" "" ""];
+
+  # (From nixpkgs/nixos/lib/utils.nix)
+  # Escape a path according to the systemd rules, e.g. /dev/xyzzy
+  # becomes dev-xyzzy.  FIXME: slow.
+  escapeSystemdPath = s:
+   replaceChars ["/" "-" " "] ["-" "\\x2d" "\\x20"]
+    (if hasPrefix "/" s then substring 1 (stringLength s) s else s);
+
   enabled = cfg.services != {}
       || cfg.sockets != {}
       || cfg.targets != {}
@@ -28,16 +39,14 @@ let
   buildService = style: name: serviceCfg:
     let
       filename = "${name}.${style}";
-      pathSafeName = lib.replaceChars ["@" ":" "\\" "[" "]"]
-                                      ["-" "-" "-"  ""  "" ]
-                                      filename;
+      pathSafeName = mkPathSafeName filename;
 
       # Needed because systemd derives unit names from the ultimate
       # link target.
       source = pkgs.writeTextFile {
         name = pathSafeName;
         text = toSystemdIni serviceCfg;
-        destination = "/${filename}";
+        destination = lib.escapeShellArg "/${filename}";
       } + "/${filename}";
 
       wantedBy = target:
@@ -56,6 +65,9 @@ let
   buildServices = style: serviceCfgs:
     concatLists (mapAttrsToList (buildService style) serviceCfgs);
 
+  buildListServices = style: getName: serviceCfgs:
+    concatLists (map (cfg: buildService style (getName cfg) cfg) serviceCfgs);
+
   servicesStartTimeoutMs = builtins.toString cfg.servicesStartTimeoutMs;
 
   unitType = unitKind: with types;
@@ -65,6 +77,15 @@ let
       attrsOf (attrsOf (attrsOf (either primitive (listOf primitive))))
       // {
         description = "systemd ${unitKind} unit configuration";
+      };
+
+  unitListType = unitKind: with types;
+    let
+      primitive = either bool (either int str);
+    in
+      listOf (attrsOf (attrsOf (either primitive (listOf primitive))))
+      // {
+        description = "systemd ${unitKind} unit configuration (derived names)";
       };
 
   unitDescription = type: ''
@@ -154,6 +175,20 @@ in
         example = unitExample "Path";
       };
 
+      mounts = mkOption {
+        default = {};
+        type = unitListType "mount";
+        description = unitDescription "mount";
+        example = unitExample "Mount";
+      };
+
+      automounts = mkOption {
+        default = {};
+        type = unitListType "automount";
+        description = unitDescription "automount";
+        example = unitExample "Automount";
+      };
+
       startServices = mkOption {
         default = false;
         type = types.bool;
@@ -221,6 +256,10 @@ in
           (buildServices "timer" cfg.timers)
           ++
           (buildServices "path" cfg.paths)
+          ++
+          (buildListServices "mount" (v: escapeSystemdPath v.Mount.Where) cfg.mounts)
+          ++
+          (buildListServices "automount" (v: escapeSystemdPath v.Automount.Where) cfg.automounts)
           ))
 
           sessionVariables
