@@ -8,7 +8,7 @@ let
 
   cfg = config.services.mpd;
 
-  mpdConf = pkgs.writeText "mpd.conf" ''
+  mpdConf = cfg: pkgs.writeText "mpd.conf" ''
     music_directory     "${cfg.musicDirectory}"
     playlist_directory  "${cfg.playlistDirectory}"
     ${lib.optionalString (cfg.dbFile != null) ''
@@ -24,6 +24,10 @@ let
 
     ${cfg.extraConfig}
   '';
+
+  mpdOptions = cfg: {
+
+  };
 
 in {
 
@@ -48,7 +52,7 @@ in {
         '';
       };
 
-     musicDirectory = mkOption {
+      musicDirectory = mkOption {
         type = types.either types.path (types.strMatching "(http|https|nfs|smb)://.+");
         default = "${config.home.homeDirectory}/music";
         defaultText = "$HOME/music";
@@ -94,7 +98,7 @@ in {
         '';
       };
 
-     network = {
+      network = {
 
         listenAddress = mkOption {
           type = types.str;
@@ -126,7 +130,8 @@ in {
           configuration.
         '';
       };
-    };
+
+    } // mpdOptions cfg;
 
   };
 
@@ -147,7 +152,7 @@ in {
 
       Service = {
         Environment = "PATH=${config.home.profileDirectory}/bin";
-        ExecStart = "${cfg.package}/bin/mpd --no-daemon ${mpdConf}";
+        ExecStart = "${cfg.package}/bin/mpd --no-daemon ${mpdConf cfg}";
         Type = "notify";
         ExecStartPre = ''${pkgs.bash}/bin/bash -c "${pkgs.coreutils}/bin/mkdir -p '${cfg.dataDir}' '${cfg.playlistDirectory}'"'';
       };
