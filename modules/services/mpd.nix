@@ -121,6 +121,24 @@ let
 
   };
 
+  mpdService = cfg: {
+      Unit = {
+        After = [ "network.target" "sound.target" ];
+        Description = "Music Player Daemon";
+      };
+
+      Install = {
+        WantedBy = [ "default.target" ];
+      };
+
+      Service = {
+        Environment = "PATH=${config.home.profileDirectory}/bin";
+        ExecStart = "${cfg.package}/bin/mpd --no-daemon ${mpdConf cfg}";
+        Type = "notify";
+        ExecStartPre = ''${pkgs.bash}/bin/bash -c "${pkgs.coreutils}/bin/mkdir -p '${cfg.dataDir}' '${cfg.playlistDirectory}'"'';
+      };
+  };
+
 in {
 
   ###### interface
@@ -140,23 +158,8 @@ in {
 
   config = mkIf cfg.enable {
 
-    systemd.user.services.mpd = {
-      Unit = {
-        After = [ "network.target" "sound.target" ];
-        Description = "Music Player Daemon";
-      };
+    systemd.user.services.mpd = mpdService cfg;
 
-      Install = {
-        WantedBy = [ "default.target" ];
-      };
-
-      Service = {
-        Environment = "PATH=${config.home.profileDirectory}/bin";
-        ExecStart = "${cfg.package}/bin/mpd --no-daemon ${mpdConf cfg}";
-        Type = "notify";
-        ExecStartPre = ''${pkgs.bash}/bin/bash -c "${pkgs.coreutils}/bin/mkdir -p '${cfg.dataDir}' '${cfg.playlistDirectory}'"'';
-      };
-    };
   };
 
 }
