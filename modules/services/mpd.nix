@@ -40,6 +40,14 @@ let
       '';
     };
 
+    autoStart = mkOption {
+      type = types.bool;
+      default = true;
+      description = ''
+        Whether this instance should be started automatically.
+      '';
+    };
+
     musicDirectory = mkOption {
       type = types.either types.path (types.strMatching "(http|https|nfs|smb)://.+");
       default = "${config.home.homeDirectory}/music";
@@ -127,7 +135,7 @@ let
       Description = "Music Player Daemon";
     };
 
-    Install = {
+    ${if cfg.autoStart then "Install" else null} = {
       WantedBy = [ "default.target" ];
     };
 
