@@ -122,21 +122,21 @@ let
   };
 
   mpdService = cfg: {
-      Unit = {
-        After = [ "network.target" "sound.target" ];
-        Description = "Music Player Daemon";
-      };
+    Unit = {
+      After = [ "network.target" "sound.target" ];
+      Description = "Music Player Daemon";
+    };
 
-      Install = {
-        WantedBy = [ "default.target" ];
-      };
+    Install = {
+      WantedBy = [ "default.target" ];
+    };
 
-      Service = {
-        Environment = "PATH=${config.home.profileDirectory}/bin";
-        ExecStart = "${cfg.package}/bin/mpd --no-daemon ${mpdConf cfg}";
-        Type = "notify";
-        ExecStartPre = ''${pkgs.bash}/bin/bash -c "${pkgs.coreutils}/bin/mkdir -p '${cfg.dataDir}' '${cfg.playlistDirectory}'"'';
-      };
+    Service = {
+      Environment = "PATH=${config.home.profileDirectory}/bin";
+      ExecStart = "${cfg.package}/bin/mpd --no-daemon ${mpdConf cfg}";
+      Type = "notify";
+      ExecStartPre = ''${pkgs.bash}/bin/bash -c "${pkgs.coreutils}/bin/mkdir -p '${cfg.dataDir}' '${cfg.playlistDirectory}'"'';
+    };
   };
 
 in {
